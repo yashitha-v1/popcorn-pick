@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🍿 PopcornPick - Neon</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div class="logo">
+    <div class="title">🍿 PopcornPick</div>
+    <div style="color:var(--text-medium); font-size:.9rem">Neon Edition</div>
+  </div>
+  <nav class="nav" id="topNav">
+    <a href="#/" data-route="/">Home</a>
+    <a href="#/movies" data-route="/movies">Movies</a>
+    <a href="#/shows" data-route="/shows">TV Shows</a>
+    <a href="#/watchlist" data-route="/watchlist">Watchlist</a>
+  </nav>
+  <div class="controls">
+    <input id="searchBox" class="input" placeholder="Search titles...">
+    <select id="genreFilter" class="input small">
+      <option value="all">All Genres</option>
+      <option value="Action">Action</option>
+      <option value="Sci-Fi">Sci-Fi</option>
+      <option value="Drama">Drama</option>
+      <option value="Thriller">Thriller</option>
+      <option value="Fantasy">Fantasy</option>
+      <option value="Comedy">Comedy</option>
+      <option value="Historical">Historical</option>
+      <option value="Crime">Crime</option>
+      <option value="Romance">Romance</option>
+      <option value="Animation">Animation</option>
+    </select>
+    <select id="platformFilter" class="input small">
+      <option value="all">All Platforms</option>
+      <option>Netflix</option>
+      <option>Prime Video</option>
+      <option>HBO Max</option>
+      <option>Disney+ / Streaming</option>
+      <option>Streaming</option>
+      <option>Theaters / Streaming</option>
+      <option>Theaters</option>
+      <option>Sony LIV</option>
+    </select>
+    <select id="sortBy" class="input small">
+      <option value="default">Sort</option>
+      <option value="ratingDesc">Rating ↓</option>
+      <option value="ratingAsc">Rating ↑</option>
+      <option value="alpha">A → Z</option>
+      <option value="yearDesc">Year ↓</option>
+      <option value="yearAsc">Year ↑</option>
+    </select>
+    <button id="loginBtn" class="cta">Sign In</button>
+    <div id="userArea" class="userBadge" style="display:none">
+      <img id="userAvatar" src="https://picsum.photos/seed/user/64" alt="user">
+      <div id="userName"></div>
+      <button id="logoutBtn" class="smallBtn" style="background:transparent;color:var(--text-medium);border:1px solid rgba(255,255,255,0.03)">Logout</button>
+    </div>
+  </div>
+</header>
+
+<main id="app">
+  <!-- content injected by JS SPA -->
+</main>
+
+<!-- INFO OVERLAY (not used for details now, only kept for safety) -->
+<div id="infoOverlay">
+  <div class="infoCard" role="dialog" aria-modal="true">
+    <div>
+      <img id="infoImage" src="" alt="">
+    </div>
+    <div>
+      <h2 id="infoTitle">Title</h2>
+      <p id="infoDesc">Long description</p>
+      <div class="infoMeta" id="infoDetails"></div>
+      <div class="infoActions">
+        <button id="playTrailer" class="smallBtn">▶ Watch Trailer</button>
+        <button id="addWatch" class="smallBtn star">☆ Add to Watchlist</button>
+        <button class="smallBtn" onclick="closeInfo()">Close</button>
+      </div>
+      <div class="moreLike" id="moreLike"></div>
+    </div>
+  </div>
+</div>
+
+<!-- TRAILER MODAL -->
+<div id="trailerModal">
+  <div class="trailerInner" id="trailerInner"></div>
+</div>
+
+<!-- LOGIN / SIGNUP MODAL -->
+<div id="loginModal" class="modal">
+  <div class="box">
+    <h2>Sign In</h2>
+    <input id="username" placeholder="Username">
+    <input id="password" type="password" placeholder="Password">
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+      <button id="doLogin" class="cta">Login</button>
+      <button id="openSignup" class="smallBtn">Create account</button>
+    </div>
+  </div>
+</div>
+
+<div id="signupModal" class="modal">
+  <div class="box">
+    <h2>Create Account</h2>
+    <input id="newUser" placeholder="Username">
+    <input id="newPass" type="password" placeholder="Password">
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+      <button id="doSignup" class="cta">Create</button>
+      <button id="openLogin" class="smallBtn">Back to login</button>
+    </div>
+  </div>
+</div>
+
+<!-- WATCHLIST MODAL (mobile quick view) -->
+<div id="watchlistModal" class="modal">
+  <div class="box">
+    <h2>Your Watchlist</h2>
+    <div id="watchlistContent"></div>
+    <div style="margin-top:10px; text-align:right">
+      <button onclick="closeWatchModal()" class="smallBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
