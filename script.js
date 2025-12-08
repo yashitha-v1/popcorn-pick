@@ -396,6 +396,61 @@ function debounce(fn, ms) {
 }
 
 /* ---------------------------------------------------------
+   POSTER & PLATFORM HELPERS
+----------------------------------------------------------*/
+
+function getPoster(item) {
+  // Use YouTube trailer thumbnail as a "real" poster
+  if (item.trailer) {
+    return `https://img.youtube.com/vi/${item.trailer}/hqdefault.jpg`;
+  }
+  // fallback to whatever is in data.img
+  return item.img;
+}
+
+function getPlatformInfo(item) {
+  const plat = item.platform || '';
+  const q = encodeURIComponent(item.title);
+
+  if (plat.includes('Netflix')) {
+    return {
+      label: 'Netflix',
+      url: `https://www.netflix.com/search?q=${q}`
+    };
+  }
+  if (plat.includes('Prime Video')) {
+    return {
+      label: 'Prime Video',
+      url: `https://www.primevideo.com/search/ref=atv_nb_sr?phrase=${q}`
+    };
+  }
+  if (plat.includes('Disney+')) {
+    return {
+      label: 'Disney+ Hotstar',
+      url: `https://www.hotstar.com/in/search?q=${q}`
+    };
+  }
+  if (plat.includes('HBO Max')) {
+    return {
+      label: 'HBO / JioCinema',
+      url: `https://www.jiocinema.com/search/${q}`
+    };
+  }
+  if (plat.includes('Sony LIV')) {
+    return {
+      label: 'Sony LIV',
+      url: `https://www.sonyliv.com/search/${q}`
+    };
+  }
+
+  // generic streaming / theaters: JustWatch
+  return {
+    label: plat || 'Streaming',
+    url: `https://www.justwatch.com/in/search?q=${q}`
+  };
+}
+
+/* ---------------------------------------------------------
    AUTH / USERS
 ----------------------------------------------------------*/
 
@@ -512,22 +567,31 @@ function highlightNav() {
 ----------------------------------------------------------*/
 
 function makeCard(item) {
+  const poster = getPoster(item);
+  const plat = getPlatformInfo(item);
+
   return `
     <div class="cardWrap">
       <div class="card" data-slug="${item.slug}">
-        <img src="${item.img}" alt="${item.title}">
+        <img src="${poster}" alt="${item.title}">
         <div class="description-overlay">
           <h4 style="margin:0 0 6px; color:var(--gold-accent)">Synopsis</h4>
           <p style="margin:0; color:var(--text-medium)">${item.desc}</p>
         </div>
         <h3>${item.title} <span style="font-size:.8rem;color:var(--text-medium)">(${item.year})</span></h3>
-        <p>${item.type} • ${item.genre} • ${item.platform}</p>
+        <p>
+          ${item.type} • ${item.genre} • 
+          <a href="${plat.url}" target="_blank" class="platformLink" style="color:var(--neon-blue);text-decoration:none;">
+            ${plat.label}
+          </a>
+        </p>
         <div style="display:flex;justify-content:center;margin-bottom:8px" class="rating">
           ⭐ <strong>${item.rating.toFixed(1)}</strong>
         </div>
         <div class="actions">
           <button class="smallBtn" data-action="detail" data-slug="${item.slug}">Details</button>
           <button class="smallBtn" data-action="trailer" data-trailer="${item.trailer}">Trailer</button>
+          <a class="smallBtn" href="${plat.url}" target="_blank">Watch</a>
           <button class="smallBtn star" data-action="watch" data-slug="${item.slug}">☆ Watchlist</button>
         </div>
       </div>
@@ -646,6 +710,8 @@ function renderDetail(container, slug) {
 
   const idx = data.indexOf(item);
   const backLink = item.type === 'Movie' ? '#/movies' : '#/shows';
+  const poster = getPoster(item);
+  const plat = getPlatformInfo(item);
 
   container.innerHTML = `
     <section>
@@ -655,13 +721,17 @@ function renderDetail(container, slug) {
       </div>
       <div class="detail-layout">
         <div>
-          <img src="${item.img}" alt="${item.title}" class="detail-poster">
+          <img src="${poster}" alt="${item.title}" class="detail-poster">
         </div>
         <div>
           <div class="detail-meta">
             <div><strong>Type:</strong> ${item.type}</div>
             <div><strong>Genre:</strong> ${item.genre}</div>
-            <div><strong>Platform:</strong> ${item.platform}</div>
+            <div><strong>Platform:</strong> 
+              <a href="${plat.url}" target="_blank" class="platformLink" style="color:var(--neon-blue);text-decoration:none;">
+                ${plat.label}
+              </a>
+            </div>
             <div><strong>Rating:</strong> ⭐ ${item.rating.toFixed(1)}/10</div>
             <div><strong>Director:</strong> ${item.director}</div>
             <div><strong>Cast:</strong> ${item.cast.join(', ')}</div>
@@ -679,6 +749,7 @@ function renderDetail(container, slug) {
             </div>
           </div>
           <div style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap">
+            <a href="${plat.url}" target="_blank" class="smallBtn">Open on ${plat.label}</a>
             <button class="smallBtn star" id="detailWatchBtn">
               ${isInWatchlist(idx) ? '★ In Watchlist' : '☆ Add to Watchlist'}
             </button>
@@ -770,7 +841,7 @@ function openWatchModal() {
   } else {
     container.innerHTML = list.map(idx => `
       <div style="display:flex;gap:10px;align-items:center;margin:8px 0">
-        <img src="${data[idx].img}" style="width:64px;height:96px;object-fit:cover;border-radius:6px">
+        <img src="${getPoster(data[idx])}" style="width:64px;height:96px;object-fit:cover;border-radius:6px">
         <div style="flex:1">
           <div style="color:var(--neon-blue)">${data[idx].title}</div>
           <div style="color:var(--text-medium);font-size:.9rem">${data[idx].type} • ${data[idx].genre}</div>
@@ -818,7 +889,7 @@ document.addEventListener('click', (e) => {
 // Card click (anywhere except buttons)
 document.addEventListener('click', (e) => {
   const card = e.target.closest('.card');
-  if (card && !e.target.closest('button')) {
+  if (card && !e.target.closest('button') && !e.target.closest('a')) {
     const slug = card.dataset.slug;
     if (slug) {
       location.hash = `#/title/${encodeURIComponent(slug)}`;
