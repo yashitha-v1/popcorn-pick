@@ -201,8 +201,8 @@ function movieCard(movie) {
 /* =====================================================
    MOVIE DETAILS
 ===================================================== */
-async function openDetails(id) {
-  const data = await fetchJSON(`${BACKEND}/api/movie/${id}?type=${currentType}`);
+async function openDetails(id, type = currentType) {
+  const data = await fetchJSON(`${BACKEND}/api/movie/${id}?type=${type}`);
   if (!data.details) return;
 
   const director =
@@ -214,30 +214,41 @@ async function openDetails(id) {
   infoOverlay.innerHTML = `
     <div class="infoCard full">
       <button class="closeDetails">✕</button>
-      <img src="${data.details.poster_path
+
+      <div class="infoLeft">
+        <img src="${data.details.poster_path
       ? IMG + data.details.poster_path
       : "https://via.placeholder.com/500x750?text=No+Image"
     }">
-      <h2>${data.details.title || data.details.name}</h2>
-      <p>${data.details.overview}</p>
-      <p><b>Director:</b> ${director}</p>
-      <p><b>Cast:</b> ${cast}</p>
-      <div class="actions">
-        ${data.trailerKey
-      ? `<a target="_blank" href="https://youtube.com/watch?v=${data.trailerKey}">▶ Trailer</a>`
+      </div>
+
+      <div class="infoRight">
+        <h1>${data.details.title || data.details.name}</h1>
+        <p class="overview">${data.details.overview}</p>
+
+        <p><b>Director:</b> ${director}</p>
+        <p><b>Cast:</b> ${cast}</p>
+
+        <div class="actions">
+          ${data.trailerKey
+      ? `<a class="cta" target="_blank" href="https://youtube.com/watch?v=${data.trailerKey}">▶ Trailer</a>`
       : ""
     }
-        ${data.ottLink
-      ? `<a target="_blank" href="${data.ottLink}">📺 Watch</a>`
-      : "<span>OTT not available</span>"
+
+          ${data.ottLink
+      ? `<a class="cta" target="_blank" href="${data.ottLink}">📺 Watch</a>`
+      : `<span class="muted">OTT not available</span>`
     }
-        <button onclick="addToWatchlist(${id})">➕ Watchlist</button>
+
+          <button class="cta" onclick="addToWatchlist(${id})">➕ Watchlist</button>
+        </div>
       </div>
     </div>
   `;
 
   infoOverlay.style.display = "flex";
   infoOverlay.onclick = () => (infoOverlay.style.display = "none");
+
   document.querySelector(".infoCard").onclick = e => e.stopPropagation();
   document.querySelector(".closeDetails").onclick = () =>
     (infoOverlay.style.display = "none");
