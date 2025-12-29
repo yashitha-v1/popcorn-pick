@@ -1,313 +1,369 @@
-import express from "express";
-import cors from "cors";
-import dotenv from "dotenv";
-import mongoose from "mongoose";
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-import axios from "axios";
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
+/* =====================================================
+   CONFIG
+===================================================== */
+const BACKEND = "http://localhost:3000";
+const IMG = "https://image.tmdb.org/t/p/w500";
 
-dotenv.config();
+/* =====================================================
+   ELEMENTS
+===================================================== */
+const grid = document.querySelector(".grid");
 
-/* =========================
-   PATH FIX
-========================= */
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const trendingRow = document.getElementById("trendingRow");
+const continueRow = document.getElementById("continueRow");
+const recommendedRow = document.getElementById("recommendedRow");
 
-/* =========================
-   APP INIT
-========================= */
-const app = express();
+const searchBox = document.getElementById("searchBox");
+const genreFilter = document.getElementById("genreFilter");
+const ratingFilter = document.getElementById("ratingFilter");
+const languageFilter = document.getElementById("languageFilter");
+const moodFilter = document.getElementById("moodFilter");
 
-app.use(express.json());
-app.use(cors({
-    origin: "*",
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"]
-}));
+const navMovies = document.getElementById("navMovies");
+const navShows = document.getElementById("navShows");
+const navWatchlist = document.getElementById("navWatchlist");
 
-console.log("TMDB KEY:", process.env.TMDB_KEY ? "LOADED ✅" : "MISSING ❌");
+const loginBtn = document.getElementById("loginBtn");
+const logoutBtn = document.getElementById("logoutBtn");
 
-/* =========================
-   MONGODB (OPTIONAL)
-========================= */
-mongoose
-    .connect(process.env.MONGO_URI)
-    .then(() => console.log("✅ MongoDB Connected"))
-    .catch(() => console.log("⚠️ MongoDB skipped (OK for submission)"));
+const authModal = document.getElementById("authModal");
+const closeAuth = document.getElementById("closeAuth");
+const authTitle = document.getElementById("authTitle");
+const authName = document.getElementById("authName");
+const authEmail = document.getElementById("authEmail");
+const authPassword = document.getElementById("authPassword");
+const authSubmit = document.getElementById("authSubmit");
+const authToggle = document.getElementById("authToggle");
+const authMsg = document.getElementById("authMsg");
 
-/* =========================
-   MODELS
-========================= */
-const userSchema = new mongoose.Schema({
-    name: String,
-    email: String,
-    password: String,
-    watchlist: Array,
+const infoOverlay = document.getElementById("infoOverlay");
+
+/* =====================================================
+   STATE
+===================================================== */
+let currentType = "movie";
+let page = 1;
+let loading = false;
+let inWatchlist = false;
+let isSignup = false;
+
+let currentUser = JSON.parse(localStorage.getItem("currentUser"));
+let watchlist = JSON.parse(localStorage.getItem("watchlist") || "[]");
+
+/* =====================================================
+   RESTORE LOGIN
+===================================================== */
+if (currentUser) {
+  loginBtn.innerText = currentUser.name;
+  logoutBtn.style.display = "inline-block";
+}
+
+/* =====================================================
+   SAFE FETCH
+===================================================== */
+async function fetchJSON(url, fallback = { results: [] }) {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error();
+    return await res.json();
+  } catch {
+    return fallback;
+  }
+}
+
+/* =====================================================
+   ACTIVE TAB
+===================================================== */
+function setActiveTab(activeBtn) {
+  [navMovies, navShows, navWatchlist].forEach(btn =>
+    btn.classList.remove("active")
+  );
+  activeBtn.classList.add("active");
+}
+
+/* =====================================================
+   INIT
+===================================================== */
+setActiveTab(navMovies);
+loadHome();
+loadBrowse();
+
+/* =====================================================
+   NAVIGATION
+===================================================== */
+navMovies.onclick = () => {
+  inWatchlist = false;
+  setActiveTab(navMovies);
+  switchType("movie");
+};
+
+navShows.onclick = () => {
+  inWatchlist = false;
+  setActiveTab(navShows);
+  switchType("tv");
+};
+
+navWatchlist.onclick = () => {
+  setActiveTab(navWatchlist);
+  openWatchlist();
+};
+
+function switchType(type) {
+  currentType = type;
+  page = 1;
+  grid.innerHTML = "";
+  loadHome();
+  loadBrowse();
+}
+
+/* =====================================================
+   HOME SECTIONS
+===================================================== */
+async function loadHome() {
+  loadRow(trendingRow, `/api/trending?type=${currentType}`);
+  loadRow(continueRow, `/api/movies?type=${currentType}&page=1`);
+  loadRow(recommendedRow, `/api/movies?type=${currentType}&rating=7`);
+}
+
+async function loadRow(row, endpoint) {
+  const data = await fetchJSON(BACKEND + endpoint);
+  row.innerHTML = "";
+  data.results.slice(0, 10).forEach(m => row.appendChild(movieCard(m)));
+}
+
+/* =====================================================
+   BROWSE + INFINITE SCROLL
+===================================================== */
+async function loadBrowse() {
+  if (loading || inWatchlist) return;
+  loading = true;
+
+  const url =
+    `${BACKEND}/api/movies?type=${currentType}` +
+    `&page=${page}` +
+    `&search=${searchBox.value}` +
+    `&genre=${genreFilter.value}` +
+    `&rating=${ratingFilter.value}` +
+    `&language=${languageFilter.value}` +
+    `&mood=${moodFilter.value}`;
+
+  const data = await fetchJSON(url);
+  data.results.forEach(m => grid.appendChild(movieCard(m)));
+
+  loading = false;
+}
+
+window.addEventListener("scroll", () => {
+  if (inWatchlist) return;
+  if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 300) {
+    page++;
+    loadBrowse();
+  }
 });
 
-const User = mongoose.model("User", userSchema);
+/* =====================================================
+   SEARCH & FILTERS
+===================================================== */
+searchBox.addEventListener("input", debounce(resetBrowse, 400));
+genreFilter.onchange = resetBrowse;
+ratingFilter.onchange = resetBrowse;
+languageFilter.onchange = resetBrowse;
+moodFilter.onchange = resetBrowse;
 
-/* =========================
-   BASE ROUTE
-========================= */
-app.get("/", (req, res) => {
-    res.send("🚀 PopcornPick Backend Running");
-});
+function resetBrowse() {
+  inWatchlist = false;
+  page = 1;
+  grid.innerHTML = "";
+  loadBrowse();
+}
 
-/* =========================
-   TMDB CONSTANTS
-========================= */
-const TMDB = "https://api.themoviedb.org/3";
-const KEY = process.env.TMDB_KEY;
-const CACHE_FILE = path.join(__dirname, "tmdb_cache.json");
+/* =====================================================
+   MOVIE CARD
+===================================================== */
+function movieCard(movie) {
+  const div = document.createElement("div");
+  div.className = "card";
 
-/* =========================================================
-   🔥 TRENDING (DIRECT → PROXY → CACHE → DEMO)
-========================================================= */
-app.get("/api/trending", async (req, res) => {
-    const type = req.query.type || "movie";
+  div.innerHTML = `
+    <img src="${movie.poster_path
+      ? IMG + movie.poster_path
+      : "https://via.placeholder.com/300x450?text=No+Image"
+    }">
+    <h4>${movie.title || movie.name}</h4>
+    <p>⭐ ${movie.vote_average || "N/A"}</p>
+  `;
 
-    try {
-        // 1️⃣ DIRECT
-        const direct = await axios.get(`${TMDB}/trending/${type}/day`, {
-            params: { api_key: KEY },
-            timeout: 5000,
-        });
+  div.onclick = () => openDetails(movie.id, movie._type || currentType);
 
-        fs.writeFileSync(CACHE_FILE, JSON.stringify(direct.data, null, 2));
-        return res.json(direct.data);
+  return div;
+}
 
-    } catch (e1) {
-        console.log("⚠️ Direct TMDB blocked");
+/* =====================================================
+   MOVIE DETAILS
+===================================================== */
+async function openDetails(id) {
+  const data = await fetchJSON(`${BACKEND}/api/movie/${id}?type=${currentType}`);
+  if (!data.details) return;
 
-        try {
-            // 2️⃣ PROXY
-            const proxy = await axios.get(
-                `https://cors.isomorphic-git.org/${TMDB}/trending/${type}/day`,
-                { params: { api_key: KEY }, timeout: 5000 }
-            );
+  const director =
+    data.credits?.crew?.find(p => p.job === "Director")?.name || "N/A";
 
-            fs.writeFileSync(CACHE_FILE, JSON.stringify(proxy.data, null, 2));
-            return res.json(proxy.data);
+  const cast =
+    data.credits?.cast?.slice(0, 8).map(c => c.name).join(", ") || "N/A";
 
-        } catch (e2) {
-            console.log("⚠️ Proxy blocked, using cache");
-
-            // 3️⃣ CACHE
-            if (fs.existsSync(CACHE_FILE)) {
-                return res.json(JSON.parse(fs.readFileSync(CACHE_FILE)));
-            }
-
-            // 4️⃣ DEMO FALLBACK
-            return res.json({
-                results: [
-                    {
-                        id: 1,
-                        title: "Demo Movie (Offline)",
-                        overview: "TMDB blocked. Offline demo data.",
-                        vote_average: 8.5,
-                        poster_path: null,
-                    },
-                ],
-            });
-        }
+  infoOverlay.innerHTML = `
+    <div class="infoCard full">
+      <button class="closeDetails">✕</button>
+      <img src="${data.details.poster_path
+      ? IMG + data.details.poster_path
+      : "https://via.placeholder.com/500x750?text=No+Image"
+    }">
+      <h2>${data.details.title || data.details.name}</h2>
+      <p>${data.details.overview}</p>
+      <p><b>Director:</b> ${director}</p>
+      <p><b>Cast:</b> ${cast}</p>
+      <div class="actions">
+        ${data.trailerKey
+      ? `<a target="_blank" href="https://youtube.com/watch?v=${data.trailerKey}">▶ Trailer</a>`
+      : ""
     }
-});
-
-/* =========================================================
-   🎬 MOVIES / TV (Browse, Search, Filters, Pagination)
-========================================================= */
-app.get("/api/movies", async (req, res) => {
-    const {
-        type = "movie",
-        page = 1,
-        search = "",
-        genre = "",
-        rating = "",
-        language = "",
-        mood = "",
-
-    } = req.query;
-
-    try {
-        let url = search
-            ? `${TMDB}/search/${type}`
-            : `${TMDB}/discover/${type}`;
-
-        const params = {
-            api_key: KEY,
-            page,
-            sort_by: "popularity.desc",
-            query: search || undefined,
-        };
-
-        if (genre) params.with_genres = genre;
-        if (rating) params["vote_average.gte"] = rating;
-        if (language) params.with_original_language = language;
-
-        if (mood === "feelgood") params.with_genres = "35,10751";
-        if (mood === "thriller") params.with_genres = "53,27";
-        if (mood === "romantic") params.with_genres = "10749";
-        if (mood === "family") params.with_genres = "10751";
-
-        const response = await axios.get(url, {
-            params,
-            timeout: 5000,
-        });
-
-        res.json(response.data);
-
-    } catch (err) {
-        console.log("⚠️ /api/movies fallback");
-
-        res.json({
-            results: [
-                {
-                    id: 101,
-                    title: "Offline Demo Movie",
-                    overview: "TMDB blocked. Offline mode active.",
-                    poster_path: null,
-                    vote_average: 7.8,
-                },
-            ],
-        });
+        ${data.ottLink
+      ? `<a target="_blank" href="${data.ottLink}">📺 Watch</a>`
+      : "<span>OTT not available</span>"
     }
-});
+        <button onclick="addToWatchlist(${id})">➕ Watchlist</button>
+      </div>
+    </div>
+  `;
 
-/* =========================================================
-   🎥 MOVIE / TV DETAILS (Description + Cast + Director)
-========================================================= */
-app.get("/api/movie/:id", async (req, res) => {
-    const { id } = req.params;
-    const type = req.query.type || "movie";
+  infoOverlay.style.display = "flex";
+  infoOverlay.onclick = () => (infoOverlay.style.display = "none");
+  document.querySelector(".infoCard").onclick = e => e.stopPropagation();
+  document.querySelector(".closeDetails").onclick = () =>
+    (infoOverlay.style.display = "none");
+}
 
-    try {
-        const [details, credits] = await Promise.all([
-            axios.get(`${TMDB}/${type}/${id}`, {
-                params: { api_key: KEY },
-                timeout: 5000,
-            }),
-            axios.get(`${TMDB}/${type}/${id}/credits`, {
-                params: { api_key: KEY },
-                timeout: 5000,
-            }),
-        ]);
+/* =====================================================
+   WATCHLIST
+===================================================== */
+function openWatchlist() {
+  if (!currentUser) {
+    authMsg.innerText = "Please sign in first";
+    authModal.style.display = "flex";
+    return;
+  }
+  inWatchlist = true;
+  renderWatchlist();
+}
 
-        res.json({
-            details: details.data,
-            credits: credits.data,
-        });
+function addToWatchlist(id) {
+  if (!currentUser) {
+    authMsg.innerText = "Please sign in first";
+    authModal.style.display = "flex";
+    return;
+  }
 
-    } catch (err) {
-        console.log("⚠️ Movie details fallback");
+  const exists = watchlist.find(
+    item => item.id === id && item.type === currentType
+  );
 
-        res.json({
-            details: {
-                title: "Offline Movie",
-                overview: "Details unavailable due to network restriction",
-                vote_average: "N/A",
-                poster_path: null,
-            },
-            credits: {
-                cast: [],
-                crew: [],
-            },
-        });
-    }
-});
+  if (!exists) {
+    watchlist.push({ id, type: currentType });
+    localStorage.setItem("watchlist", JSON.stringify(watchlist));
+    alert("Added to Watchlist");
+  }
+}
 
-/* =========================================================
-   🎥 MOVIE / TV DETAILS + TRAILER + OTT (WHERE TO WATCH)
-========================================================= */
-/* =========================================================
-   🎥 MOVIE / TV DETAILS (SMART TRAILER + OTT FIX)
-========================================================= */
-app.get("/api/movie/:id", async (req, res) => {
-    const { id } = req.params;
-    const type = req.query.type || "movie";
+async function renderWatchlist() {
+  grid.innerHTML = "";
 
-    try {
-        const [detailsRes, creditsRes, videosRes, providersRes] =
-            await Promise.all([
-                axios.get(`${TMDB}/${type}/${id}`, {
-                    params: { api_key: KEY },
-                }),
-                axios.get(`${TMDB}/${type}/${id}/credits`, {
-                    params: { api_key: KEY },
-                }),
-                axios.get(`${TMDB}/${type}/${id}/videos`, {
-                    params: { api_key: KEY },
-                }),
-                axios.get(`${TMDB}/${type}/${id}/watch/providers`, {
-                    params: { api_key: KEY },
-                }),
-            ]);
+  for (const item of watchlist) {
+    const data = await fetchJSON(
+      `${BACKEND}/api/movie/${item.id}?type=${item.type}`
+    );
 
-        /* ---------- TRAILER FIX ---------- */
-        const videos = videosRes.data.results || [];
+    if (!data.details) continue;
 
-        const trailer =
-            videos.find(v => v.site === "YouTube" && v.type === "Trailer") ||
-            videos.find(v => v.site === "YouTube" && v.type === "Teaser") ||
-            videos.find(v => v.site === "YouTube");
+    grid.appendChild(
+      movieCard({
+        id: item.id,
+        title: data.details.title || data.details.name,
+        poster_path: data.details.poster_path,
+        vote_average: data.details.vote_average,
+        _type: item.type
+      })
+    );
+  }
+}
 
-        /* ---------- OTT FIX (ANY REGION) ---------- */
-        const providers = providersRes.data.results || {};
-        const regionKey = Object.keys(providers)[0]; // take ANY available region
-        const ottLink = regionKey ? providers[regionKey].link : null;
+/* =====================================================
+   AUTH
+===================================================== */
+loginBtn.onclick = () => {
+  authMsg.innerText = "";
+  authModal.style.display = "flex";
+};
 
-        res.json({
-            details: detailsRes.data,
-            credits: creditsRes.data,
-            trailerKey: trailer ? trailer.key : null,
-            ottLink,
-        });
+closeAuth.onclick = () => (authModal.style.display = "none");
 
-    } catch (err) {
-        console.log("⚠️ Movie details fallback");
+authToggle.onclick = () => {
+  isSignup = !isSignup;
+  authTitle.innerText = isSignup ? "Create Profile" : "Sign In";
+  authName.style.display = isSignup ? "block" : "none";
+};
 
-        res.json({
-            details: {
-                title: "Offline Movie",
-                overview: "Details unavailable",
-                vote_average: "N/A",
-                poster_path: null,
-            },
-            credits: { cast: [], crew: [] },
-            trailerKey: null,
-            ottLink: null,
-        });
-    }
-});
+authSubmit.onclick = async () => {
+  if (!authEmail.value || !authPassword.value) {
+    authMsg.innerText = "Email and password required";
+    return;
+  }
 
+  const endpoint = isSignup ? "/api/auth/signup" : "/api/auth/login";
 
+  const res = await fetch(BACKEND + endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: authName.value,
+      email: authEmail.value,
+      password: authPassword.value
+    })
+  });
 
-/* =========================================================
-   🔐 AUTH (DEMO – SUBMISSION SAFE)
-========================================================= */
-app.post("/api/auth/signup", async (req, res) => {
-    res.json({
-        token: "demo-token",
-        name: req.body.name || "Demo User",
-    });
-});
+  const data = await res.json();
 
-app.post("/api/auth/login", async (req, res) => {
-    res.json({
-        token: "demo-token",
-        name: "Demo User",
-    });
-});
+  if (!res.ok) {
+    authMsg.innerText = data.msg || "Auth failed";
+    return;
+  }
 
-/* =========================================================
-   SERVER START
-========================================================= */
-const PORT = 3000;
-app.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
-});
+  currentUser = { name: data.name, token: data.token };
+  localStorage.setItem("currentUser", JSON.stringify(currentUser));
 
+  loginBtn.innerText = data.name;
+  logoutBtn.style.display = "inline-block";
+  authModal.style.display = "none";
+};
+
+/* =====================================================
+   LOGOUT
+===================================================== */
+logoutBtn.onclick = () => {
+  localStorage.removeItem("currentUser");
+  currentUser = null;
+  logoutBtn.style.display = "none";
+  loginBtn.innerText = "Sign In";
+  setActiveTab(navMovies);
+  switchType("movie");
+};
+
+/* =====================================================
+   UTIL
+===================================================== */
+function debounce(fn, delay) {
+  let t;
+  return (...args) => {
+    clearTimeout(t);
+    t = setTimeout(() => fn(...args), delay);
+  };
+}
