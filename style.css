@@ -264,3 +264,391 @@ main {
   margin-top: 6px;
   border-radius: 6px;
 }
+
+/* AUTH MODAL */
+.modal {
+  position: fixed;
+  inset: 0;
+  display: none;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 500;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal .box {
+  background: #1f2024;
+  padding: 24px;
+  width: 360px;
+  border-radius: 14px;
+  position: relative;
+}
+
+.modal input {
+  width: 100%;
+  padding: 10px;
+  margin: 8px 0;
+}
+
+.closeBtn {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  cursor: pointer;
+  font-size: 20px;
+  color: #ffcc00;
+}
+
+/* KEEP YOUR EXISTING CSS EXACTLY */
+
+/* ADDITION FOR CARD ACTIONS */
+.cardActions {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  right: 8px;
+  display: flex;
+  gap: 6px;
+}
+
+.cardActions a {
+  flex: 1;
+  background: rgba(0, 0, 0, .75);
+  color: #ffcc00;
+  text-align: center;
+  padding: 4px;
+  border-radius: 6px;
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.cardActions a:hover {
+  background: #ffcc00;
+  color: black;
+}
+
+.card {
+  position: relative;
+}
+
+.cardLinks {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  right: 8px;
+  display: flex;
+  gap: 6px;
+}
+
+.cardLinks a {
+  flex: 1;
+  background: rgba(0, 0, 0, .8);
+  color: #ffcc00;
+  font-size: 12px;
+  text-align: center;
+  padding: 4px;
+  border-radius: 6px;
+  text-decoration: none;
+}
+
+.cardLinks a:hover {
+  background: #ffcc00;
+  color: black;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  display: none;
+  background: rgba(0, 0, 0, .85);
+  z-index: 500;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal .box {
+  background: #1f2024;
+  padding: 24px;
+  width: 360px;
+  border-radius: 14px;
+  position: relative;
+}
+
+.closeBtn {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  cursor: pointer;
+  font-size: 20px;
+  color: #ffcc00;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+#authArea {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.profile {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  cursor: pointer;
+  border: 2px solid #ffcc00;
+}
+
+.logoutBtn {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+#authArea {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.profile {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid #ffcc00;
+}
+
+.logoutBtn {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+#infoOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: none;
+  /* JS will change this to flex */
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  /* VERY IMPORTANT */
+  pointer-events: auto;
+  /* VERY IMPORTANT */
+}
+
+#infoOverlay .infoCard {
+  background: #111;
+  color: #fff;
+  max-width: 900px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  gap: 20px;
+}
+
+#infoOverlay img {
+  width: 250px;
+  border-radius: 10px;
+}
+
+/* ===== FIX DETAILS MODAL ===== */
+
+#infoOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+
+  background: rgba(0, 0, 0, 0.85);
+
+  display: none;
+  /* JS sets it to flex */
+  align-items: center;
+  justify-content: center;
+
+  z-index: 10000;
+  /* 🔥 MOST IMPORTANT */
+  pointer-events: auto;
+}
+
+#infoOverlay .infoCard {
+  background: #111;
+  color: #fff;
+
+  max-width: 900px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+
+  border-radius: 12px;
+  padding: 20px;
+
+  display: flex;
+  gap: 20px;
+}
+
+#infoOverlay img {
+  width: 250px;
+  border-radius: 10px;
+}
+
+#authModal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 20000;
+  /* ABOVE infoOverlay */
+}
+
+#infoOverlay {
+  z-index: 10000;
+}
+
+#infoOverlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 999;
+  pointer-events: none;
+  /* 🔥 THIS IS THE KEY */
+}
+
+.infoCard {
+  pointer-events: auto;
+}
+
+#infoOverlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 9999;
+
+  /* 🔥 ALWAYS CLICKABLE */
+  pointer-events: auto;
+
+  align-items: center;
+  justify-content: center;
+}
+
+.infoCard {
+  background: #111;
+  color: #fff;
+  max-width: 900px;
+  width: 90%;
+  border-radius: 12px;
+  padding: 20px;
+
+  /* 🔥 stop overlay click */
+  pointer-events: auto;
+}
+
+.closeDetails {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  background: transparent;
+  border: none;
+  font-size: 22px;
+  color: white;
+  cursor: pointer;
+}
+
+.ottLink {
+  display: inline-block;
+  margin: 10px 0;
+  padding: 8px 12px;
+  background: #ffcc00;
+  color: #000;
+  text-decoration: none;
+  border-radius: 6px;
+  font-weight: bold;
+}
+
+iframe {
+  margin-top: 10px;
+  border-radius: 10px;
+}
+
+.trailerBtn {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 8px 14px;
+  background: #ffcc00;
+  color: #000;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.ottTag {
+  display: inline-block;
+  background: #222;
+  padding: 4px 8px;
+  margin: 4px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  /* 👈 IMPORTANT */
+}
+
+.input {
+  max-width: 220px;
+  /* 👈 prevents pushing Sign In out */
+  width: 100%;
+}
+
+#authArea {
+  display: flex;
+  align-items: center;
+}
+
+#loginBtn {
+  display: inline-block;
+  /* 👈 force visibility */
+  white-space: nowrap;
+}
+
+.navBtn.active {
+  background: #f5c518;
+  color: black;
+}
+
+.loginPrompt {
+  text-align: center;
+  margin-top: 80px;
+  color: #ccc;
+}
+
+.loginPrompt h2 {
+  margin-bottom: 10px;
+}
+
+.loginLink {
+  color: #f5c518;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.loginLink:hover {
+  text-decoration: underline;
+}
