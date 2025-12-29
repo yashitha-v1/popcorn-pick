@@ -257,19 +257,9 @@ async function openDetails(id, type = currentType) {
 /* =====================================================
    WATCHLIST
 ===================================================== */
-function openWatchlist() {
+async function addToWatchlist(id) {
   if (!currentUser) {
-    authMsg.innerText = "Please sign in first";
-    authModal.style.display = "flex";
-    return;
-  }
-  inWatchlist = true;
-  renderWatchlist();
-}
-
-function addToWatchlist(id) {
-  if (!currentUser) {
-    authMsg.innerText = "Please sign in first";
+    authMsg.innerText = "Please login to use watchlist";
     authModal.style.display = "flex";
     return;
   }
@@ -278,12 +268,53 @@ function addToWatchlist(id) {
     item => item.id === id && item.type === currentType
   );
 
-  if (!exists) {
-    watchlist.push({ id, type: currentType });
-    localStorage.setItem("watchlist", JSON.stringify(watchlist));
-    alert("Added to Watchlist");
+  if (exists) {
+    alert("Already in watchlist");
+    return;
+  }
+
+  watchlist.push({ id, type: currentType });
+  localStorage.setItem("watchlist", JSON.stringify(watchlist));
+
+  alert("Added to Watchlist");
+}
+
+
+async function openWatchlist() {
+  if (!currentUser) {
+    showLoginMessage();
+    return;
+  }
+
+  inWatchlist = true;
+  grid.innerHTML = "";
+
+  if (watchlist.length === 0) {
+    grid.innerHTML = `<div class="card">Your watchlist is empty</div>`;
+    return;
+  }
+
+  for (const item of watchlist) {
+    const data = await fetchJSON(
+      `${BACKEND}/api/movie/${item.id}?type=${item.type}`
+    );
+
+    if (!data.details) continue;
+
+    grid.appendChild(
+      movieCard({
+        id: item.id,
+        title: data.details.title || data.details.name,
+        poster_path: data.details.poster_path,
+        vote_average: data.details.vote_average,
+        _type: item.type
+      })
+    );
   }
 }
+
+
+
 
 async function renderWatchlist() {
   grid.innerHTML = "";
@@ -378,3 +409,9 @@ function debounce(fn, delay) {
     t = setTimeout(() => fn(...args), delay);
   };
 }
+// expose functions for inline HTML onclick (ES module fix)
+window.addToWatchlist = addToWatchlist;
+window.openWatchlist = openWatchlist;
+
+
+
